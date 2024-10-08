@@ -1,5 +1,12 @@
 const File = require("../models/file");
 const { StatusCodes } = require("http-status-codes");
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+  cloud_name: "dksc6pmhj",
+  api_key: "593397163278856",
+  api_secret: "h3cfk_bqcDGlkMmtZHZch2HVJmw",
+});
 
 exports.getFile = async (req, res) => {
   try {
@@ -14,8 +21,6 @@ exports.getFile = async (req, res) => {
 
 exports.createFile = async (req, res) => {
   const { question, answers, priority } = req.body;
-  const image = req.file;
-
   if (!question || !answers || !priority) {
     return res
       .status(StatusCodes.BAD_REQUEST)
@@ -23,10 +28,30 @@ exports.createFile = async (req, res) => {
   }
 
   try {
+    let imageUrls = [];
+
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map((file) =>
+        cloudinary.uploader.upload(file.path)
+      );
+      const results = await Promise.allSettled(uploadPromises);
+      results.forEach((result) => {
+        if (result.status === "fulfilled") {
+          imageUrls.push(result.value.secure_url);
+        }
+      });
+
+      if (imageUrls.length === 0) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Image Upload Failed!" });
+      }
+    }
+
     const newFile = new File({
       question,
       answers,
-      image: image?.path,
+      image: imageUrls,
       priority,
     });
 
@@ -44,14 +69,33 @@ exports.createFile = async (req, res) => {
 exports.editFile = async (req, res) => {
   const { id } = req.params;
   try {
+    const existingFile = await File.findById(id);
+
+    if (!existingFile) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "File Not Found!" });
+    }
+
     const updatedFields = {
       question: req.body.question,
       answers: req.body.answers,
       priority: req.body.priority,
     };
 
-    if (req.file) {
-      updatedFields.image = req.file.path;
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map((file) =>
+        cloudinary.uploader.upload(file.path)
+      );
+      const results = await Promise.allSettled(uploadPromises);
+
+      const imageUrls = results
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value.secure_url);
+
+      if (imageUrls.length > 0) {
+        updatedFields.image = imageUrls;
+      }
     }
 
     const updatedFile = await File.findByIdAndUpdate(

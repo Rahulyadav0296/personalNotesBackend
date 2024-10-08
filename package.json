@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^1.7.7",
     "body-parser": "^1.20.3",
+    "cloudinary": "^2.5.0",
     "cors": "^2.8.5",
     "dot-env": "^0.0.1",
     "dotenv": "^16.4.5",
@@ -25,4 +26,6 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "no
+    "nodemon": "^3.1.7"
+  }
+}

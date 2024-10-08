@@ -10,7 +10,7 @@ const FileSchema = new mongoose.Schema({
     required: true,
   },
   image: {
-    type: String,
+    type: [String],
   },
   priority: {
     type: String,

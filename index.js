@@ -12,15 +12,8 @@ const app = express();
 // Middleware
 app.use(express.json());
 
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  next();
-});
-
 const allowCredential = {
-  origin: "http://localhost:5173",
+  origin: "http://localhost:5173", // Ensure this is correct
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
 };
 
@@ -33,13 +26,6 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: allowCredential,
-});
-
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  next();
 });
 
 const port = process.env.PORT || 3000;
@@ -61,12 +47,23 @@ mongoose
     io.on("connection", (socket) => {
       console.log("A user connected:", socket.id);
 
-      // Listen for an event from the client
-      socket.on("newData", (data) => {
-        // Emit the new data to all connected clients
-        io.emit("newData", data);
+      // Handle new question creation event from the client
+      socket.on("questionCreated", (data) => {
+        console.log("New question created: ", data.question);
+
+        // Broadcast the new question to all connected clients
+        io.emit("questionCreated", data.question);
       });
 
+      // Handle question update event from the client
+      socket.on("questionUpdated", (data) => {
+        console.log("Question updated: ", data.question);
+
+        // Broadcast the updated question to all connected clients
+        io.emit("questionUpdated", data.question);
+      });
+
+      // Handle client disconnection
       socket.on("disconnect", () => {
         console.log("A user disconnected:", socket.id);
       });
