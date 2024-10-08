@@ -13,9 +13,12 @@ const app = express();
 app.use(express.json());
 
 const allowCredential = {
-  origin: "http://localhost:5173", // Ensure this is correct
+  origin: "https://personal-note-frontend.vercel.app", // No trailing slash
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  // If you need to send cookies or HTTP authentication
 };
+
+app.use(cors(allowCredential));
 
 app.use(cors(allowCredential));
 app.use("/uploads", express.static("uploads"));
